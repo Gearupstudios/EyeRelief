@@ -20,7 +20,13 @@ A macOS menu bar app that helps prevent eye strain using the **20-20-20 rule**: 
 1. Go to the [Releases](../../releases) page
 2. Download the latest `EyeRelief.dmg`
 3. Open the DMG and drag EyeRelief to your Applications folder
-4. Launch EyeRelief from Applications
+4. **First launch** (important for macOS security):
+   - Right-click (or Control+click) on EyeRelief.app
+   - Select **"Open"** from the menu
+   - Click **"Open"** in the dialog that appears
+   - This is only needed once - after that, the app opens normally
+
+> **Note:** macOS shows a security warning because the app isn't notarized with Apple. This is safe to bypass using the steps above.
 
 ### Build from Source
 ```bash
