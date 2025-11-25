@@ -1,0 +1,36 @@
+# Claude AI files
+AGENTS.md
+CLAUDE.md
+agents.md
+claude.md
+
+# Build output
+build/
+*.dmg
+
+# macOS
+.DS_Store
+._*
+*.swp
+*~
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary files
+*.tmp
+*.temp
+dmg_temp/
