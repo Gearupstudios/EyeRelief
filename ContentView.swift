@@ -8,6 +8,7 @@ struct ContentView: View {
     @StateObject private var timerManager = TimerManager()
     @StateObject private var menuBarManager = MenuBarManager()
     @ObservedObject private var settings = SettingsManager.shared
+    @Environment(\.colorScheme) var colorScheme
 
     init() {
         print("🚀 ContentView init called!")
@@ -18,14 +19,27 @@ struct ContentView: View {
         return 1.0 - (timerManager.timeRemaining / totalDuration)
     }
 
+    var backgroundColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.11, green: 0.11, blue: 0.12)
+            : Color(red: 0.96, green: 0.96, blue: 0.97)
+    }
+
+    var cardBackgroundColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.15, green: 0.15, blue: 0.16)
+            : Color.white
+    }
+
     var body: some View {
         ZStack {
-            // Glass background with more opacity
-            VisualEffectView(material: .popover, blendingMode: .behindWindow)
+            // Solid background
+            backgroundColor
                 .ignoresSafeArea()
 
-            // Semi-transparent overlay for cleaner look
-            Color.black.opacity(0.15)
+            // Very subtle glass overlay (10% effect)
+            VisualEffectView(material: .hudWindow, blendingMode: .withinWindow)
+                .opacity(0.1)
                 .ignoresSafeArea()
 
             mainContent
@@ -80,6 +94,13 @@ struct HeaderView: View {
 
 struct StatusPill: View {
     let isActive: Bool
+    @Environment(\.colorScheme) var colorScheme
+
+    var pillBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.2)
+            : Color(red: 0.92, green: 0.92, blue: 0.94)
+    }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -92,7 +113,7 @@ struct StatusPill: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Color.primary.opacity(0.05))
+        .background(pillBackground)
         .cornerRadius(12)
     }
 }
@@ -102,11 +123,30 @@ struct TimerCircleView: View {
     let progress: Double
     let formattedTime: String
     let isActive: Bool
+    @Environment(\.colorScheme) var colorScheme
+
+    var circleBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.14, green: 0.14, blue: 0.15)
+            : Color.white
+    }
+
+    var trackColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.08)
+            : Color.black.opacity(0.06)
+    }
 
     var body: some View {
         ZStack {
+            // Subtle card background with very light glass effect
             Circle()
-                .stroke(Color.primary.opacity(0.1), lineWidth: 12)
+                .fill(circleBackground)
+                .frame(width: 220, height: 220)
+                .shadow(color: colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.06), radius: 20, x: 0, y: 8)
+
+            Circle()
+                .stroke(trackColor, lineWidth: 12)
                 .frame(width: 180, height: 180)
 
             Circle()
@@ -196,6 +236,13 @@ struct BreakDurationButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+
+    var unselectedBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.2)
+            : Color(red: 0.92, green: 0.92, blue: 0.94)
+    }
 
     var body: some View {
         Button(action: action) {
@@ -203,7 +250,7 @@ struct BreakDurationButton: View {
                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                 .frame(width: 54)
                 .padding(.vertical, 8)
-                .background(isSelected ? t1Red : Color.primary.opacity(0.05))
+                .background(isSelected ? t1Red : unselectedBackground)
                 .foregroundColor(isSelected ? .white : .primary)
                 .cornerRadius(8)
         }
@@ -215,6 +262,13 @@ struct BreakDurationButton: View {
 struct SoundSettingsView: View {
     @ObservedObject var settings: SettingsManager
     @ObservedObject var launchManager = LaunchAtLoginManager.shared
+    @Environment(\.colorScheme) var colorScheme
+
+    var buttonBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.2)
+            : Color(red: 0.92, green: 0.92, blue: 0.94)
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -229,7 +283,7 @@ struct SoundSettingsView: View {
                     .foregroundColor(settings.soundEnabled ? t1Red : .secondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.primary.opacity(0.05))
+                    .background(buttonBackground)
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -250,7 +304,7 @@ struct SoundSettingsView: View {
                 .foregroundColor(launchManager.launchAtLogin ? t1Red : .secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.primary.opacity(0.05))
+                .background(buttonBackground)
                 .cornerRadius(8)
             }
             .buttonStyle(PlainButtonStyle())
@@ -280,9 +334,16 @@ struct SoundPicker: View {
 // MARK: - Control Buttons
 struct ControlButtons: View {
     @ObservedObject var timerManager: TimerManager
+    @Environment(\.colorScheme) var colorScheme
 
     private var buttonColor: Color {
         timerManager.isActive ? Color.orange : t1Red
+    }
+
+    var resetButtonBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.2)
+            : Color(red: 0.92, green: 0.92, blue: 0.94)
     }
 
     var body: some View {
@@ -302,6 +363,7 @@ struct ControlButtons: View {
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(buttonColor)
+                    .shadow(color: buttonColor.opacity(0.3), radius: 8, x: 0, y: 4)
             )
 
             Button(action: { timerManager.resetTimer() }) {
@@ -313,7 +375,7 @@ struct ControlButtons: View {
             .frame(width: 48, height: 48)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.primary.opacity(0.1))
+                    .fill(resetButtonBackground)
             )
         }
         .padding(.horizontal, 28)
@@ -331,6 +393,19 @@ struct ControlButtons: View {
 // MARK: - Stats View
 struct StatsView: View {
     @ObservedObject var stats = StatsManager.shared
+    @Environment(\.colorScheme) var colorScheme
+
+    var cardBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.14, green: 0.14, blue: 0.15)
+            : Color.white
+    }
+
+    var dividerColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.1)
+            : Color.black.opacity(0.08)
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -350,7 +425,7 @@ struct StatsView: View {
 
                 // Divider
                 Rectangle()
-                    .fill(Color.primary.opacity(0.1))
+                    .fill(dividerColor)
                     .frame(width: 1, height: 16)
 
                 // Total breaks
@@ -366,9 +441,10 @@ struct StatsView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.03))
+            .padding(.vertical, 10)
+            .background(cardBackground)
             .cornerRadius(10)
+            .shadow(color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
 
             // Encouragement message
             Text(stats.encouragementMessage)
@@ -398,6 +474,13 @@ struct DurationButton: View {
     let isDisabled: Bool
     let selectedColor: Color
     let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+
+    var unselectedBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.2)
+            : Color(red: 0.92, green: 0.92, blue: 0.94)
+    }
 
     var body: some View {
         Button(action: action) {
@@ -406,7 +489,7 @@ struct DurationButton: View {
                 .lineLimit(1)
                 .frame(width: 54)
                 .padding(.vertical, 8)
-                .background(isSelected ? selectedColor : Color.primary.opacity(0.05))
+                .background(isSelected ? selectedColor : unselectedBackground)
                 .foregroundColor(isSelected ? .white : .primary)
                 .cornerRadius(8)
         }
