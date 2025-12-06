@@ -146,6 +146,8 @@ struct BreakOverlayView: View {
             } else {
                 timer?.invalidate()
                 timer = nil
+                // Play sound when break ends
+                SettingsManager.shared.playBreakEndSound()
                 onBreakComplete()
             }
         }

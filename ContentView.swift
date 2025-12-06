@@ -54,7 +54,13 @@ struct ContentView: View {
         VStack(spacing: 0) {
             HeaderView(isActive: timerManager.isActive)
             Spacer()
-            TimerCircleView(progress: progress, formattedTime: timerManager.formattedTime, isActive: timerManager.isActive)
+            TimerCircleView(
+                progress: progress,
+                formattedTime: timerManager.formattedTime,
+                isActive: timerManager.isActive,
+                sessionBreakCount: timerManager.sessionBreakCount,
+                maxSessionBreaks: TimerManager.maxSessionBreaks
+            )
             Spacer()
 
             Group {
@@ -123,6 +129,8 @@ struct TimerCircleView: View {
     let progress: Double
     let formattedTime: String
     let isActive: Bool
+    let sessionBreakCount: Int
+    let maxSessionBreaks: Int
     @Environment(\.colorScheme) var colorScheme
 
     var circleBackground: Color {
@@ -137,22 +145,94 @@ struct TimerCircleView: View {
             : Color.black.opacity(0.06)
     }
 
+    var outerTrackColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.05)
+            : Color.black.opacity(0.04)
+    }
+
+    // Progress for outer ring (0-10 breaks)
+    var sessionProgress: Double {
+        return Double(sessionBreakCount) / Double(maxSessionBreaks)
+    }
+
+    // Color gradient based on progress - starts dim, becomes brighter green as it fills
+    var sessionRingGradient: LinearGradient {
+        let progress = sessionProgress
+        if progress >= 1.0 {
+            // Full - bright green
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.2, green: 0.85, blue: 0.4),
+                    Color(red: 0.3, green: 0.95, blue: 0.5)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else if progress >= 0.7 {
+            // Nearly full - green
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.3, green: 0.75, blue: 0.4),
+                    Color(red: 0.4, green: 0.85, blue: 0.5)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else if progress >= 0.4 {
+            // Mid - yellow-green
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.6, green: 0.75, blue: 0.3),
+                    Color(red: 0.5, green: 0.8, blue: 0.4)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            // Low - dim green-gray
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.5, green: 0.6, blue: 0.45),
+                    Color(red: 0.55, green: 0.65, blue: 0.5)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
     var body: some View {
         ZStack {
             // Subtle card background with very light glass effect
             Circle()
                 .fill(circleBackground)
-                .frame(width: 220, height: 220)
+                .frame(width: 240, height: 240)
                 .shadow(color: colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.06), radius: 20, x: 0, y: 8)
 
+            // Outer ring - session break count track
+            Circle()
+                .stroke(outerTrackColor, lineWidth: 6)
+                .frame(width: 210, height: 210)
+
+            // Outer ring - session break count progress
+            Circle()
+                .trim(from: 0, to: CGFloat(sessionProgress))
+                .stroke(sessionRingGradient, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .frame(width: 210, height: 210)
+                .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 0.5), value: sessionBreakCount)
+
+            // Inner ring - timer track
             Circle()
                 .stroke(trackColor, lineWidth: 12)
-                .frame(width: 180, height: 180)
+                .frame(width: 170, height: 170)
 
+            // Inner ring - timer progress
             Circle()
                 .trim(from: 0, to: CGFloat(progress))
                 .stroke(progressGradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .frame(width: 180, height: 180)
+                .frame(width: 170, height: 170)
                 .rotationEffect(.degrees(-90))
                 .animation(.linear(duration: 0.5), value: progress)
 
@@ -163,6 +243,11 @@ struct TimerCircleView: View {
                 Text("remaining")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
+                // Session break indicator
+                Text("\(sessionBreakCount)/\(maxSessionBreaks) breaks")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(sessionBreakCount == maxSessionBreaks ? Color.green : .secondary.opacity(0.7))
+                    .padding(.top, 2)
             }
         }
         .padding(.vertical, 10)
@@ -358,25 +443,27 @@ struct ControlButtons: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .foregroundColor(.white)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(buttonColor)
+                        .shadow(color: buttonColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                )
+                .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(buttonColor)
-                    .shadow(color: buttonColor.opacity(0.3), radius: 8, x: 0, y: 4)
-            )
 
             Button(action: { timerManager.resetTimer() }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.primary)
+                    .frame(width: 48, height: 48)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(resetButtonBackground)
+                    )
+                    .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 48, height: 48)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(resetButtonBackground)
-            )
         }
         .padding(.horizontal, 28)
     }

@@ -84,4 +84,11 @@ class SettingsManager: ObservableObject {
         let previewPlayer = NSSound(named: soundName)
         previewPlayer?.play()
     }
+
+    func playBreakEndSound() {
+        guard soundEnabled else { return }
+        // Play a pleasant completion sound - "Hero" indicates success/completion
+        let endSound = NSSound(named: NSSound.Name("Hero"))
+        endSound?.play()
+    }
 }

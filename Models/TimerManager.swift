@@ -6,11 +6,14 @@ class TimerManager: ObservableObject {
     @Published var isActive: Bool = false
     @Published var selectedDurationIndex: Int = 1  // Default to 20 min (index 1)
     @Published var isShowingOverlay: Bool = false
+    @Published var sessionBreakCount: Int = 0  // Tracks breaks in current session (0-10)
 
     private var timer: Timer?
     private let notificationManager = NotificationManager()
     private let overlayManager = OverlayManager()
     private let statsManager = StatsManager.shared
+
+    static let maxSessionBreaks: Int = 10  // Maximum breaks to track in outer ring
 
     // Predefined timer durations in seconds
     let timerDurations: [TimeInterval] = [
@@ -91,6 +94,10 @@ class TimerManager: ObservableObject {
             guard let self = self else { return }
             print("✅ Break overlay completed")
             self.isShowingOverlay = false
+
+            // Increment session break count (cycles back after reaching max)
+            self.sessionBreakCount = min(self.sessionBreakCount + 1, TimerManager.maxSessionBreaks)
+            print("👁 Session break count: \(self.sessionBreakCount)/\(TimerManager.maxSessionBreaks)")
 
             // Record this break for stats/streak tracking
             self.statsManager.recordBreak()
