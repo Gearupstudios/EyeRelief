@@ -7,7 +7,7 @@ set -e
 
 APP_NAME="EyeRelief"
 BUNDLE_ID="com.local.eyerelief"
-VERSION="1.7"
+VERSION="1.8"
 BUILD_DIR="build"
 APP_DIR="$BUILD_DIR/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
