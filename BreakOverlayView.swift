@@ -9,11 +9,36 @@ struct BreakOverlayView: View {
     let totalDuration: Int
     let onBreakComplete: () -> Void
 
+    // Current exercise (selected once when view appears)
+    @State private var currentExercise: SettingsManager.EyeExercise?
+
     init(onBreakComplete: @escaping () -> Void) {
         let duration = SettingsManager.shared.breakDuration.seconds
         self._countdown = State(initialValue: duration)
         self.totalDuration = duration
         self.onBreakComplete = onBreakComplete
+    }
+
+    // Determine what to show based on settings
+    private var exerciseEmoji: String {
+        if SettingsManager.shared.exercisesEnabled, let exercise = currentExercise {
+            return exercise.emoji
+        }
+        return "👁"
+    }
+
+    private var exerciseTitle: String {
+        if SettingsManager.shared.exercisesEnabled, let exercise = currentExercise {
+            return exercise.title
+        }
+        return "Eye Break!"
+    }
+
+    private var exerciseInstruction: String {
+        if SettingsManager.shared.exercisesEnabled, let exercise = currentExercise {
+            return exercise.instruction
+        }
+        return "Look at something 20 feet away"
     }
 
     var body: some View {
@@ -32,13 +57,13 @@ struct BreakOverlayView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                // Eye icon with pulse animation
+                // Exercise icon with pulse animation
                 ZStack {
                     Circle()
                         .fill(Color.white.opacity(0.05))
                         .frame(width: 140, height: 140)
 
-                    Text("👁")
+                    Text(exerciseEmoji)
                         .font(.system(size: 80))
                         .scaleEffect(scale)
                         .animation(
@@ -48,13 +73,15 @@ struct BreakOverlayView: View {
                 }
 
                 VStack(spacing: 8) {
-                    Text("Eye Break!")
+                    Text(exerciseTitle)
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
 
-                    Text("Look at something 20 feet away")
+                    Text(exerciseInstruction)
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
                 }
 
                 // Countdown circle
@@ -116,6 +143,11 @@ struct BreakOverlayView: View {
         }
         .opacity(opacity)
         .onAppear {
+            // Select random exercise if enabled
+            if SettingsManager.shared.exercisesEnabled {
+                currentExercise = SettingsManager.shared.getRandomExercise()
+            }
+
             // Play sound
             SettingsManager.shared.playBreakSound()
 

@@ -7,7 +7,7 @@ set -e
 
 APP_NAME="EyeRelief"
 BUNDLE_ID="com.local.eyerelief"
-VERSION="1.8"
+VERSION="1.9"
 BUILD_DIR="build"
 APP_DIR="$BUILD_DIR/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
@@ -111,6 +111,7 @@ SWIFT_FILES=(
     "Models/SettingsManager.swift"
     "Models/LaunchAtLoginManager.swift"
     "Models/StatsManager.swift"
+    "Models/ScheduleManager.swift"
 )
 
 # Check if all files exist
@@ -129,6 +130,7 @@ swiftc -O -o "$MACOS_DIR/$APP_NAME" \
     -framework Foundation \
     -framework Combine \
     -framework UserNotifications \
+    -framework EventKit \
     -target arm64-apple-macos11.0 \
     -target x86_64-apple-macos11.0 \
     2>&1 || swiftc -O -o "$MACOS_DIR/$APP_NAME" \
@@ -137,7 +139,8 @@ swiftc -O -o "$MACOS_DIR/$APP_NAME" \
     -framework AppKit \
     -framework Foundation \
     -framework Combine \
-    -framework UserNotifications
+    -framework UserNotifications \
+    -framework EventKit
 
 if [ $? -ne 0 ]; then
     echo "❌ Build failed"

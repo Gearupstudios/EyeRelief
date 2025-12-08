@@ -17,7 +17,29 @@ class SettingsManager: ObservableObject {
         didSet { UserDefaults.standard.set(breakDuration.rawValue, forKey: "breakDuration") }
     }
 
+    @Published var exercisesEnabled: Bool {
+        didSet { UserDefaults.standard.set(exercisesEnabled, forKey: "exercisesEnabled") }
+    }
+
     private var audioPlayer: NSSound?
+
+    // MARK: - Eye Exercises
+    struct EyeExercise {
+        let emoji: String
+        let title: String
+        let instruction: String
+    }
+
+    static let eyeExercises: [EyeExercise] = [
+        EyeExercise(emoji: "👀", title: "20-20-20 Rule", instruction: "Look at something 20 feet away"),
+        EyeExercise(emoji: "🔄", title: "Eye Circles", instruction: "Slowly roll your eyes in large circles"),
+        EyeExercise(emoji: "👆", title: "Focus Shift", instruction: "Look at your thumb, then far away, repeat"),
+        EyeExercise(emoji: "😌", title: "Palming", instruction: "Cover your eyes with palms and relax")
+    ]
+
+    func getRandomExercise() -> EyeExercise {
+        return Self.eyeExercises.randomElement() ?? Self.eyeExercises[0]
+    }
 
     enum BreakSound: String, CaseIterable {
         case chime = "chime"
@@ -68,6 +90,8 @@ class SettingsManager: ObservableObject {
         self.selectedSound = BreakSound(rawValue: savedSound) ?? .chime
         let savedDuration = UserDefaults.standard.integer(forKey: "breakDuration")
         self.breakDuration = BreakDuration(rawValue: savedDuration) ?? .fiveSeconds
+        // Eye exercises disabled by default
+        self.exercisesEnabled = UserDefaults.standard.object(forKey: "exercisesEnabled") as? Bool ?? false
     }
 
     func playBreakSound() {

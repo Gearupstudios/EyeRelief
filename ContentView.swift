@@ -44,7 +44,7 @@ struct ContentView: View {
 
             mainContent
         }
-        .frame(width: 380, height: 620)
+        .frame(width: 380, height: 720)
         .onAppear {
             menuBarManager.setup(with: timerManager)
         }
@@ -67,6 +67,7 @@ struct ContentView: View {
                 IntervalSelector(timerManager: timerManager)
                 BreakDurationSelector(settings: settings)
                 SoundSettingsView(settings: settings)
+                SmartScheduleView()
             }
 
             Spacer()
@@ -393,6 +394,22 @@ struct SoundSettingsView: View {
                 .cornerRadius(8)
             }
             .buttonStyle(PlainButtonStyle())
+
+            // Eye exercises toggle
+            Button(action: { settings.exercisesEnabled.toggle() }) {
+                HStack(spacing: 6) {
+                    Image(systemName: settings.exercisesEnabled ? "figure.mind.and.body" : "figure.stand")
+                        .font(.system(size: 12))
+                    Text("Eye Exercises")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(settings.exercisesEnabled ? t1Red : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(buttonBackground)
+                .cornerRadius(8)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 24)
         .padding(.top, 8)
@@ -413,6 +430,187 @@ struct SoundPicker: View {
         .onChange(of: settings.selectedSound) { newSound in
             settings.previewSound(newSound)
         }
+    }
+}
+
+// MARK: - Smart Schedule Settings
+struct SmartScheduleView: View {
+    @ObservedObject var schedule = ScheduleManager.shared
+    @Environment(\.colorScheme) var colorScheme
+    @State private var showScheduleOptions = false
+
+    var buttonBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.18, green: 0.18, blue: 0.2)
+            : Color(red: 0.92, green: 0.92, blue: 0.94)
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Main toggle button
+            Button(action: {
+                if schedule.smartSchedulingEnabled {
+                    showScheduleOptions.toggle()
+                } else {
+                    schedule.smartSchedulingEnabled = true
+                    showScheduleOptions = true
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: schedule.smartSchedulingEnabled ? "calendar.badge.clock" : "calendar")
+                        .font(.system(size: 12))
+                    Text("Smart Schedule")
+                        .font(.system(size: 11, weight: .medium))
+                    if schedule.smartSchedulingEnabled {
+                        Image(systemName: showScheduleOptions ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 8))
+                    }
+                }
+                .foregroundColor(schedule.smartSchedulingEnabled ? t1Red : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(buttonBackground)
+                .cornerRadius(8)
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            // Expanded options
+            if showScheduleOptions && schedule.smartSchedulingEnabled {
+                VStack(spacing: 6) {
+                    // Disable toggle
+                    Button(action: {
+                        schedule.smartSchedulingEnabled = false
+                        showScheduleOptions = false
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 10))
+                            Text("Disable")
+                                .font(.system(size: 10))
+                        }
+                        .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    // Focus Mode toggle
+                    ScheduleToggleRow(
+                        icon: "moon.fill",
+                        title: "Pause in Focus Mode",
+                        isEnabled: $schedule.pauseDuringFocusMode
+                    )
+
+                    // Active Hours toggle with time pickers
+                    VStack(spacing: 4) {
+                        ScheduleToggleRow(
+                            icon: "clock.fill",
+                            title: "Active Hours Only",
+                            isEnabled: $schedule.activeHoursEnabled
+                        )
+
+                        if schedule.activeHoursEnabled {
+                            HStack(spacing: 8) {
+                                HourPicker(hour: $schedule.activeHoursStart, label: "From")
+                                Text("-")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 10))
+                                HourPicker(hour: $schedule.activeHoursEnd, label: "To")
+                            }
+                            .padding(.top, 2)
+                        }
+                    }
+
+                    // Calendar toggle
+                    VStack(spacing: 4) {
+                        ScheduleToggleRow(
+                            icon: "person.2.fill",
+                            title: "Pause in Meetings",
+                            isEnabled: $schedule.pauseDuringMeetings
+                        )
+
+                        if schedule.pauseDuringMeetings && !schedule.calendarAccessGranted {
+                            Button(action: {
+                                schedule.requestCalendarAccess()
+                            }) {
+                                Text("Grant Calendar Access")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(t1Red)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(buttonBackground.opacity(0.5))
+                .cornerRadius(8)
+            }
+
+            // Status indicator when paused by schedule
+            if schedule.isPausedBySchedule {
+                HStack(spacing: 4) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.system(size: 10))
+                    Text(schedule.pauseReason)
+                        .font(.system(size: 10))
+                }
+                .foregroundColor(.orange)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 4)
+    }
+}
+
+struct ScheduleToggleRow: View {
+    let icon: String
+    let title: String
+    @Binding var isEnabled: Bool
+
+    var body: some View {
+        Button(action: { isEnabled.toggle() }) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                    .foregroundColor(isEnabled ? t1Red : .secondary)
+                    .frame(width: 14)
+                Text(title)
+                    .font(.system(size: 10))
+                    .foregroundColor(isEnabled ? .primary : .secondary)
+                Spacer()
+                Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 12))
+                    .foregroundColor(isEnabled ? t1Red : .secondary)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct HourPicker: View {
+    @Binding var hour: Int
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
+            Picker("", selection: $hour) {
+                ForEach(0..<24, id: \.self) { h in
+                    Text(formatHour(h)).tag(h)
+                }
+            }
+            .pickerStyle(MenuPickerStyle())
+            .frame(width: 70)
+            .scaleEffect(0.8)
+        }
+    }
+
+    func formatHour(_ hour: Int) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h a"
+        let date = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
+        return formatter.string(from: date)
     }
 }
 
